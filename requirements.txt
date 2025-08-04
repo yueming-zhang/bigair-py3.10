@@ -1,0 +1,13 @@
+pytest
+requests
+pandas
+pyhive
+boto3
+openai
+chromadb
+
+# Local editable install of modified vanna
+-e ./vanna
+
+--extra-index-url https://artifactory.d.musta.ch/artifactory/api/pypi/pypi/simple
+airbnb-trino-client
