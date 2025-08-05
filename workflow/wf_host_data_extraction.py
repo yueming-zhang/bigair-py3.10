@@ -32,7 +32,14 @@ def run_host_qa() -> str:
         # for path in Path('.').rglob('*'):
         #     print(path)
         # print("-----Current directory structure end")
+        import os
 
+        # Override cache locations to use /tmp
+        os.environ["XDG_CACHE_HOME"] = "/tmp/.cache"
+        os.environ["TRANSFORMERS_CACHE"] = "/tmp/.cache/transformers"
+        os.environ["HF_HOME"] = "/tmp/.cache/huggingface"
+        os.environ["TORCH_HOME"] = "/tmp/.cache/torch"
+        os.environ["ONNX_HOME"] = "/tmp/.cache/onnx"
 
         from workflow.host_summary.host_qa import get_host_summary_qa
         qa = get_host_summary_qa()

@@ -9,9 +9,11 @@ sys.path.append(str(Path(__file__).parents[1]))
 from vanna.base import VannaBase
 from vanna.chromadb import ChromaDB_VectorStore
 from host_summary.openai_client import openai_setup
-from airbnb_trino_client import create_client
+from host_summary.hive_presto_client import create_trino_hive_client, create_trino_hive_client_cursor
+
 
 hive_client = None
+hive_cursor = None
 
 class HostSummaryLLM(VannaBase):
   def __init__(self, config=None):
@@ -44,12 +46,16 @@ class HostSummaryQA(ChromaDB_VectorStore, HostSummaryLLM):
         """
         Connect to the Airbnb Hive database.
         """
-        global hive_client
-        if hive_client is None:
-            hive_client = create_client()
+        global hive_cursor
+        if hive_cursor is None:
+            hive_cursor = create_trino_hive_client_cursor()
 
-            res = hive_client.fetchone("describe homes.listing__dim_active")
+            # res = hive_client.fetchall("describe homes.listing__dim_active")
+
+            hive_cursor.execute("describe homes.listing__dim_active")
+            res = hive_cursor.fetchall()
             assert res, "Failed to connect to Airbnb Hive database."
+            hive_cursor.close()
 
         def run_sql_airbnb_hive(query: str) -> Union[pd.DataFrame, None]:
 
@@ -60,7 +66,7 @@ class HostSummaryQA(ChromaDB_VectorStore, HostSummaryLLM):
                 query = query.replace(";", "") # remove trailing semicolon if any
                 query = query.replace("\t", " ")  # replace tabs with spaces
 
-                cursor = hive_client.conn.cursor()
+                cursor = create_trino_hive_client_cursor()
                 cursor.execute(query)
                 res = cursor.fetchall()
 
@@ -69,7 +75,13 @@ class HostSummaryQA(ChromaDB_VectorStore, HostSummaryLLM):
             except Exception as e:
                 print(f"Error executing query: {e}")
                 return None
-            
+            finally:
+                if 'cursor' in locals() and cursor is not None:
+                    try:
+                        cursor.close()
+                    except Exception:
+                        pass
+
         self.run_sql = run_sql_airbnb_hive
         self.run_sql_is_set = True
 

@@ -5,7 +5,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-
+from airbnb_identity import context as aic
 from pyhive import presto
 
 host = "presto-gateway-production.presto-gateway-production"
@@ -174,7 +174,12 @@ def execute_hive_query(sql):
     except Exception as e:
         logging.error(f"CGE - Error executing Hive operation: {e}")
         raise
-
+    finally:
+        if 'cursor' in locals() and cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
 
 # Thread-safe cache for table columns
 _table_columns_cache = {}
@@ -227,6 +232,12 @@ def get_table_columns(table_name):
     except Exception as e:
         logging.error(f"CGE - Error getting table columns for {table_name}: {e}")
         raise
+    finally:
+        if 'cursor' in locals() and cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
 
 
 def create_hive_table(table_name):
@@ -422,3 +433,39 @@ def get_json_value(data, field_name):
                 return parent_obj[original_child_key]
 
     return None
+
+def create_trino_hive_client():
+    context = aic.current_context()
+    logging.info(
+        "Setting up Trino Hive Credential for %s",
+        context
+    )
+
+    if context.is_interactive:
+        from airbnb_trino_client import create_client
+        ret_client = create_client()
+        logging.info("Using interactive credentials for Trino Hive client")
+    else:
+        ret_client = _create_new_connection()
+        logging.info("Using AirMesh service-to-service for Trino Hive Client")
+
+    return ret_client
+
+def create_trino_hive_client_cursor():
+    context = aic.current_context()
+    logging.info(
+        "Setting up Trino Hive Credential for %s",
+        context
+    )
+
+    if context.is_interactive:
+        from airbnb_trino_client import create_client
+        ret_client = create_client()
+        ret_cursor = ret_client.conn.cursor()
+        logging.info("Using interactive credentials for Trino Hive client")
+    else:
+        ret_client = _create_new_connection()
+        ret_cursor = ret_client.cursor()
+        logging.info("Using AirMesh service-to-service for Trino Hive Client")
+
+    return ret_cursor
