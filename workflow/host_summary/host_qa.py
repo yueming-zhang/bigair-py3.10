@@ -1,9 +1,14 @@
 from pathlib import Path
 from typing import Union
 import pandas as pd
+import sys
+
+sys.path.append(str(Path(__file__).parents[1]))
+# sys.path.append(str(Path(__file__).parents[1].joinpath('vanna', 'src')))
+
 from vanna.base import VannaBase
 from vanna.chromadb import ChromaDB_VectorStore
-from openai_client import openai_setup
+from host_summary.openai_client import openai_setup
 from airbnb_trino_client import create_client
 
 hive_client = None
