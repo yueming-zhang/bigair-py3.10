@@ -19,15 +19,10 @@ class ConnectionFactory:
                 return
                 
             try:
-                context = aic.current_context()
-                if context.is_interactive:
-                    from .conn_interactive import ConnInteractive
-                    cls._provider = ConnInteractive()
-                    logger.info("ConnectionFactory initialized with ConnInteractive")
-                else:
-                    from .conn_service import ConnService
-                    cls._provider = ConnService()
-                    logger.info("ConnectionFactory initialized with ConnService")
+
+                from .conn_service import ConnService
+                cls._provider = ConnService()
+                logger.info("ConnectionFactory initialized with ConnService")
                     
                 cls._initialized = True
                 
