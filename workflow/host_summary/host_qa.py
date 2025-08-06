@@ -8,8 +8,8 @@ sys.path.append(str(Path(__file__).parents[1]))
 
 from vanna.base import VannaBase
 from vanna.chromadb import ChromaDB_VectorStore
-from host_summary.openai_client import openai_setup
-from host_summary.hive_presto_client import create_trino_hive_client, create_trino_hive_client_cursor
+from host_summary.openai_client import create_openai_client
+from host_summary.hive_presto_client import create_trino_hive_client_cursor
 
 
 hive_client = None
@@ -17,7 +17,7 @@ hive_cursor = None
 
 class HostSummaryLLM(VannaBase):
   def __init__(self, config=None):
-    self.client = openai_setup()
+    self.client = create_openai_client()
     self.model_name = "gpt-4o-mini"
     pass
 
