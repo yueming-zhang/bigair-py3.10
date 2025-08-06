@@ -42,15 +42,26 @@ class HostSummaryQA(ChromaDB_VectorStore, HostSummaryLLM):
     def assistant_message(self, message: str) -> any:
         return {"role": "assistant", "content": message}
     
+    def get_hive_cursor(self):
+        """
+        Get a cursor for the Hive database.
+        This function creates a new cursor if it doesn't exist or returns the existing one.
+        """
+        global hive_cursor
+        if hive_cursor is None:
+            hive_cursor = create_trino_hive_client_cursor()
+            # Check if the cursor is successfully created
+            if not hive_cursor:
+                raise Exception("Failed to create Hive cursor.")
+        return hive_cursor
+
     def connect_to_airbnb_hive(self):
         """
         Connect to the Airbnb Hive database.
         """
         global hive_cursor
         if hive_cursor is None:
-            hive_cursor = create_trino_hive_client_cursor()
-
-            # res = hive_client.fetchall("describe homes.listing__dim_active")
+            hive_cursor = self.get_hive_cursor()
 
             hive_cursor.execute("describe homes.listing__dim_active")
             res = hive_cursor.fetchall()
@@ -66,7 +77,7 @@ class HostSummaryQA(ChromaDB_VectorStore, HostSummaryLLM):
                 query = query.replace(";", "") # remove trailing semicolon if any
                 query = query.replace("\t", " ")  # replace tabs with spaces
 
-                cursor = create_trino_hive_client_cursor()
+                cursor = self.get_hive_cursor()
                 cursor.execute(query)
                 res = cursor.fetchall()
 
