@@ -4,12 +4,10 @@ import pandas as pd
 import sys
 
 sys.path.append(str(Path(__file__).parents[1]))
-# sys.path.append(str(Path(__file__).parents[1].joinpath('vanna', 'src')))
 
 from vanna.base import VannaBase
 from vanna.chromadb import ChromaDB_VectorStore
-from host_summary.openai_client import create_openai_client
-from host_summary.hive_presto_client import create_trino_hive_client_cursor
+from host_summary.conn_factory import ConnectionFactory
 
 
 hive_client = None
@@ -17,7 +15,7 @@ hive_cursor = None
 
 class HostSummaryLLM(VannaBase):
   def __init__(self, config=None):
-    self.client = create_openai_client()
+    self.client = ConnectionFactory.create_openai_client()
     self.model_name = "gpt-4o-mini"
     pass
 
@@ -49,7 +47,7 @@ class HostSummaryQA(ChromaDB_VectorStore, HostSummaryLLM):
         """
         global hive_cursor
         if hive_cursor is None:
-            hive_cursor = create_trino_hive_client_cursor()
+            hive_cursor = ConnectionFactory.create_trino_hive_cursor()
             # Check if the cursor is successfully created
             if not hive_cursor:
                 raise Exception("Failed to create Hive cursor.")
