@@ -1,25 +1,41 @@
 from bigair import step, workflow
 
-@step
-def query_hive_data() -> str:
-    """Execute a Hive query to get sample data from homes.listing__dim_active table."""
-    try:
-        from . import hive_presto_client
-        sql = "select * from homes.listing__dim_active LIMIT 10"
-        result = hive_presto_client.execute_hive_query(sql)
-        
-        if result:
-            print(f"Query executed successfully. Retrieved {len(result)} rows:")
-            for i, row in enumerate(result, 1):
-                print(f"Row {i}: {row}")
-            return f"Successfully queried homes.listing__dim_active table, got {len(result)} rows"
-        else:
-            print("Query executed but returned no data")
-            return "Query executed but returned no data"
+@step(conda_env="devel/ming.yuezhang/host_summary:0.2")      
+def initialize_hive() -> str:
+    # """Execute a Hive query to get sample data from homes.listing__dim_active table."""
+    # try:
+    #     from workflow.host_summary.conn_factory import ConnectionFactory
 
+    #     sql = "select * from homes.listing__dim_active LIMIT 10"
+    #     result = ConnectionFactory.execute_hive_query(sql)
+
+    #     if result:
+    #         print(f"Query executed successfully. Retrieved {len(result)} rows:")
+    #         for i, row in enumerate(result, 1):
+    #             print(f"Row {i}: {row}")
+    #         return f"Successfully queried homes.listing__dim_active table, got {len(result)} rows"
+    #     else:
+    #         print("Query executed but returned no data")
+    #         return "Query executed but returned no data"
+
+    # except Exception as e:
+    #     print(f"Error executing Hive query: {e}")
+    #     return f"Failed to execute query: {str(e)}"
+    
+
+    # initialize Hive views
+    try:
+        from workflow.host_summary.hive_init import HiveInitializer
+
+        hive_initializer = HiveInitializer()
+        result = hive_initializer.create_all_hive_views()
+
+        if result:
+            return "Hive views created successfully"
+        else:
+            return "Failed to create Hive views"
     except Exception as e:
-        print(f"Error executing Hive query: {e}")
-        return f"Failed to execute query: {str(e)}"
+        return f"Failed to create Hive views: {str(e)}"
 
 
 @step(conda_env="devel/ming.yuezhang/host_summary:0.2")      
@@ -68,5 +84,5 @@ def run_host_qa() -> str:
 # @workflow(attachments=["requirements.txt"])
 @workflow(attachments=["./vanna/**/*.py", "./host_summary/**/*.py"])
 def host_data_extraction_workflow():
-    _ = query_hive_data()
+    _ = initialize_hive()
     _ = run_host_qa()

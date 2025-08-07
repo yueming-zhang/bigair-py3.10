@@ -55,3 +55,19 @@ class ConnService(ConnBase):
         except Exception as e:
             self.logger.error("Failed to create service OpenAI client: %s", e)
             raise
+
+    def create_trino_hive_client(self):
+        """Create Trino/Hive client using service-to-service authentication."""
+        self.logger.info("Using AirMesh service-to-service for Trino Hive Client")
+        
+        try:
+            conn = presto.connect(
+                host=PRESTO_HOST,
+                port=PRESTO_PORT,
+                catalog=PRESTO_CATALOG,
+                requests_kwargs={"timeout": CONNECTION_TIMEOUT},
+            )
+            return conn
+        except Exception as e:
+            self.logger.error("Failed to create service Trino client: %s", e)
+            raise

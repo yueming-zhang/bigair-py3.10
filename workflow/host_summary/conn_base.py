@@ -20,20 +20,15 @@ class ConnBase(ABC):
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
     
+
+    @abstractmethod
+    def create_trino_hive_client(self):
+        pass
+
     @abstractmethod
     def create_trino_hive_cursor(self):
-        """Create and return a Trino/Hive cursor for database operations.
-        
-        Returns:
-            Database cursor object for executing queries
-        """
         pass
     
     @abstractmethod
     def create_openai_client(self):
-        """Create and return an Azure OpenAI client.
-        
-        Returns:
-            AzureOpenAI client instance
-        """
         pass
