@@ -5,6 +5,7 @@ pyhive
 boto3
 openai
 chromadb
+python-dotenv
 
 # Local editable install of modified vanna
 -e ./workflow/vanna

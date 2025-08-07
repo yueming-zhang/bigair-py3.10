@@ -1,9 +1,15 @@
 from pathlib import Path
 from typing import Union
+from dotenv import load_dotenv
 import pandas as pd
 import sys
 
-sys.path.append(str(Path(__file__).parents[1]))
+env_path = Path(__file__).parents[1] / '.env'
+load_dotenv(dotenv_path=env_path)
+
+root_path = str(Path(__file__).parents[1])
+if root_path not in sys.path:
+    sys.path.append(root_path)
 
 from vanna.base import VannaBase
 from vanna.chromadb import ChromaDB_VectorStore
