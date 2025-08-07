@@ -3,9 +3,9 @@ from .conn_factory import ConnectionFactory
 
 logger = logging.getLogger(__name__)
 
-# Global list of Hive view queries
-HIVE_VIEW_QUERIES = [
-    """
+# Global dictionary of Hive view queries - view name as key, SQL as value
+HIVE_VIEW_QUERIES = {
+    "crm_growth_eng.listing__dim_active_curr__v": """
     CREATE OR REPLACE VIEW crm_growth_eng.listing__dim_active_curr__v AS
     SELECT
       id_host,
@@ -21,34 +21,67 @@ HIVE_VIEW_QUERIES = [
     GROUP BY
       id_host
     """
-]
+}
 
 
 class HiveInitializer:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
     
-    def create_hive_view(self, query_index=0):
+    def create_hive_view(self, view_name):
         try:
-            if query_index >= len(HIVE_VIEW_QUERIES):
-                raise IndexError(f"Query index {query_index} is out of range. Available queries: {len(HIVE_VIEW_QUERIES)}")
+            if view_name not in HIVE_VIEW_QUERIES:
+                available_views = list(HIVE_VIEW_QUERIES.keys())
+                raise KeyError(f"View '{view_name}' not found. Available views: {available_views}")
             
-            query = HIVE_VIEW_QUERIES[query_index].strip()
+            query = HIVE_VIEW_QUERIES[view_name].strip()
             result = ConnectionFactory.execute_hive_query(query)
-            self.logger.info("Hive view created successfully")
-            return True
+
+            verification_query = f"SELECT * FROM {view_name} LIMIT 1"
+            verification_result = ConnectionFactory.execute_hive_query(verification_query)
+            
+            if verification_result and len(verification_result) > 0:
+                self.logger.info(f"View '{view_name}' verification successful - contains data")
+                return True
+            else:
+                self.logger.warning(f"View '{view_name}' verification failed - no data returned")
+                return False
             
         except Exception as e:
-            self.logger.error(f"Failed to create Hive view: {e}")
+            self.logger.error(f"Failed to create or verify Hive view '{view_name}': {e}")
             raise
     
     def create_all_hive_views(self):
         try:
-            for i in range(len(HIVE_VIEW_QUERIES)):
-                self.create_hive_view(i)
-                
-            return True
+            view_names = list(HIVE_VIEW_QUERIES.keys())
+            self.logger.info(f"Creating {len(view_names)} Hive views: {view_names}")
             
+            success_count = 0
+            for view_name in view_names:
+                try:
+                    if self.create_hive_view(view_name):
+                        success_count += 1
+                except Exception as e:
+                    self.logger.error(f"Failed to create view '{view_name}': {e}")
+                    # Continue with other views even if one fails
+                    continue
+            
+            if success_count == len(view_names):
+                self.logger.info(f"All {len(view_names)} Hive views created and verified successfully")
+                return True
+            else:
+                self.logger.warning(f"Only {success_count}/{len(view_names)} views created successfully")
+                return False
+                
         except Exception as e:
             self.logger.error(f"Failed to create all Hive views: {e}")
             raise
+    
+    def get_available_views(self):
+        """
+        Get list of available view names.
+        
+        Returns:
+            list: List of available view names
+        """
+        return list(HIVE_VIEW_QUERIES.keys())
